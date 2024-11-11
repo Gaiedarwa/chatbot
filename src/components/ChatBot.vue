@@ -101,4 +101,7 @@ button {
   color: green;
 }
 </style>
+<<<<<<< HEAD
 //commentaire 
+=======
+>>>>>>> 887da3fcd3235ea83c53665dbc4639743af98e84
