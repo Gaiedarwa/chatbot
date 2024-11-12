@@ -1,107 +1,232 @@
 <template>
-  <div class="chat-container">
-    <div class="chatbox" ref="chatbox">
-      <div v-for="(message, index) in messages" :key="index" :class="message.sender">
-        <strong>{{ message.sender }}:</strong> {{ message.text }}
+  <div class="home-container">
+    <!-- Left Panel with Welcome Message and Robot Logo -->
+    <div class="overlay">
+      <h1>Welcome to Chatbot ISI</h1>
+    </div>
+
+    <!-- Chatbot Interface on the Right -->
+    <div class="right-panel">
+      <div class="avatar" @click="toggleChat">
+        💬
+      </div>
+
+      <div v-if="showChatbot" class="chat-container">
+        <div class="chatbox" ref="chatbox">
+          <div
+            v-for="(message, index) in messages"
+            :key="index"
+            :class="['message', message.sender.toLowerCase()]"
+          >
+            <div class="sender">{{ message.sender }}</div>
+            <div class="text">{{ message.text }}</div>
+          </div>
+        </div>
+        <div class="input-container">
+          <input
+            v-model="userMessage"
+            @keyup.enter="sendMessage"
+            placeholder="Type your message here..."
+          />
+          <button @click="sendMessage">Send</button>
+        </div>
       </div>
     </div>
-    <input
-      v-model="userMessage"
-      @keyup.enter="sendMessage"
-      placeholder="Tapez votre message ici..."
-    />
-    <button @click="sendMessage">Envoyer</button>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
   data() {
     return {
+      showChatbot: false,
       userMessage: '',
-      messages: []
+      messages: [
+        { sender: 'Chatbot', text: 'Hello! How can I assist you today?' }
+      ],
+      faqData: [] // Will hold the FAQ data
     };
   },
+  created() {
+    // Example of loading static FAQ data directly:
+    this.faqData = [
+      { question: 'What is ISI?', answer: "ISI is the Institut Supérieur d'Informatique, a renowned educational institution specializing in computer science." },
+      { question: 'How to apply to ISI?', answer: 'You can apply to ISI through their official website, where you’ll find all admission requirements and procedures.' },
+      { question: 'What programs does ISI offer?', answer: 'ISI offers a range of programs in software engineering, data science, cybersecurity, and telecommunications.' }
+    ];
+
+    // If you want to fetch from an external JSON file or API:
+    // fetch('/path/to/faqData.json')
+    //   .then(response => response.json())
+    //   .then(data => this.faqData = data);
+  },
   methods: {
-    addMessage(sender, text) {
-      this.messages.push({ sender, text });
-      this.$nextTick(() => {
-        this.$refs.chatbox.scrollTop = this.$refs.chatbox.scrollHeight;
-      });
+    toggleChat() {
+      this.showChatbot = !this.showChatbot;
     },
-    async sendMessage() {
-      if (this.userMessage.trim() === '') return;
+    sendMessage() {
+      if (this.userMessage.trim() !== '') {
+        // Add user message to chat
+        this.messages.push({
+          sender: 'User',
+          text: this.userMessage,
+        });
 
-      // Ajouter le message de l'utilisateur
-      const message = this.userMessage;
-      this.addMessage('Utilisateur', message);
-      this.userMessage = '';
-
-      try {
-        const response = await axios.post(
-          'https://api.openai.com/v1/chat/completions',
-          {
-            model: 'gpt-3.5-turbo', // Remplacez par 'gpt-4' si vous y avez accès
-            messages: [{ role: 'user', content: message }],
-            max_tokens: 100
-          },
-          {
-            headers: {
-              'Authorization': `Bearer VOTRE_CLE_API_OPENAI`,
-              'Content-Type': 'application/json'
-            }
-          }
+        // Find matching FAQ response
+        const response = this.faqData.find(faq =>
+          faq.question.toLowerCase() === this.userMessage.toLowerCase()
         );
 
-        const botReply = response.data.choices[0].message.content;
-        this.addMessage('Chatbot', botReply);
-      } catch (error) {
-        console.error('Erreur :', error);
-        this.addMessage('Chatbot', 'Désolé, une erreur est survenue.');
+        // Respond with the matching answer or a default message
+        setTimeout(() => {
+          if (response) {
+            this.messages.push({
+              sender: 'Chatbot',
+              text: response.answer
+            });
+          } else {
+            this.messages.push({
+              sender: 'Chatbot',
+              text: 'Sorry, I do not have an answer to that question.'
+            });
+          }
+        }, 1000);
+
+        // Clear user input
+        this.userMessage = '';
       }
     }
   }
 };
 </script>
 
-<style>
-.chat-container {
-  width: 400px;
-  margin: 0 auto;
-  padding-top: 50px;
+<style scoped>
+/* Main container styling */
+.home-container {
+  display: flex;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  background-image: url('@/assets/test2.png'); /* Replace with actual image path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
 }
 
-.chatbox {
-  border: 1px solid #ccc;
-  padding: 10px;
-  height: 400px;
+/* Contrast overlay */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4); /* Dark overlay for contrast */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #ffffff;
+  font-size: 2rem;
+  z-index: 1;
+  text-align: center;
+}
+
+.right-panel, .avatar, .chat-container, .chatbox, .input-container, input, button {
+  position: relative;
+  z-index: 2;
+}
+
+/* Chat avatar */
+.avatar {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #3f51b5;
+  color: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+  font-size: 24px;
+}
+
+.chat-container {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  width: 450px;
+  height: 500px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
+}
+
+/* Messages */
+.message {
+  display: flex;
+  flex-direction: column;
   margin-bottom: 10px;
+  max-width: 80%;
+}
+
+.user {
+  align-self: flex-end;
+  background-color: #e0f7fa;
+  border-radius: 10px;
+  padding: 10px;
+  color: #00796b;
+  margin-right: 5px;
+}
+
+.chatbot {
+  align-self: flex-start;
+  background-color: #e8eaf6;
+  border-radius: 10px;
+  padding: 10px;
+  color: #3f51b5;
+  margin-left: 5px;
+}
+
+.sender {
+  font-weight: bold;
+  font-size: 0.85em;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+/* Input container */
+.input-container {
+  display: flex;
+  width: 100%;
+  margin-top: 10px;
 }
 
 input {
-  width: 70%;
+  flex: 1;
   padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  margin-right: 5px;
 }
 
 button {
-  width: 25%;
-  padding: 10px;
+  padding: 0 15px;
+  background-color: #3f51b5;
+  color: #ffffff;
+  border-radius: 10px;
+  font-weight: bold;
 }
 
-.Utilisateur {
-  text-align: left;
-  color: blue;
-}
-
-.Chatbot {
-  text-align: left;
-  color: green;
+button:hover {
+  background-color: #303f9f;
 }
 </style>
-<<<<<<< HEAD
-//commentaire 
-=======
->>>>>>> 887da3fcd3235ea83c53665dbc4639743af98e84
